@@ -45,8 +45,10 @@ static void update_curr_myrr(struct rq *rq){
 	struct sched_myrr_entity *myrr_en = container_of(queue->next, struct sched_myrr_entity, run_list);
 	unsigned int *update_num = &myrr_en->update_num;
 	struct task_struct *curr = NULL;
+
 	*update_num += 1;
 	curr = get_current();
+
 	if(*update_num > MYRR_TIME_SLICE){
  		list_move_tail(queue->next, queue);
 		*update_num = 0;
