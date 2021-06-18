@@ -62,18 +62,21 @@ static void update_curr_mypriority(struct rq *rq){
 		for(i = 1; i < mypriority_rq->nr_running; i++){
 			compare_mypriority_en = container_of(compare_run_list, struct sched_mypriority_entity, run_list);
 			compare_mypriority_en->priority++;
+			printk("***[MYPRIORITY] priority=%d\n", compare_mypriority_en->priority);
+			compare_run_list = compare_run_list->next;
 		}
+		compare_run_list = run_list->next;
 		for(i = 1; i < mypriority_rq->nr_running; i++){
 			compare_mypriority_en = container_of(compare_run_list, struct sched_mypriority_entity, run_list);
 			compare_priority = compare_mypriority_en->priority;
-			if(compare_priority < mypriority_en->priority) break;
+			if(compare_priority <= mypriority_en->priority) break;
 			else compare_run_list = compare_run_list->next;
 		}
 		list_move_tail(run_list, compare_run_list);
 		*update_num = 0;
 		resched_curr(rq);
 	}
-	else printk("***[MYPRIORITY] update_curr_mypriority	pid=%d update_num=%d\n", curr->pid, *update_num);
+	else printk("***[MYPRIORITY] update_curr_mypriority	pid=%d update_num=%d priority=%d\n", curr->pid, *update_num, mypriority_en->priority);
 }
 
 static void enqueue_task_mypriority(struct rq *rq, struct task_struct *p, int flags) {
