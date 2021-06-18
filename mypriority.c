@@ -12,7 +12,7 @@ static void check_preempt_curr_mypriority(struct rq *rq, struct task_struct *p,i
 struct task_struct *pick_next_task_mypriority(struct rq *rq, struct task_struct *prev);
 static void prio_changed_mypriority(struct rq *rq, struct task_struct *p, int oldprio);
 
-#define MYPRIORITY_TIME_SLICE 4
+#define MYPRIORITY_TIME_SLICE 10
 const struct sched_class mypriority_sched_class={
 	.next=&fair_sched_class,
 	.enqueue_task=&enqueue_task_mypriority,
@@ -30,7 +30,10 @@ const struct sched_class mypriority_sched_class={
 	.update_curr=update_curr_mypriority,
 };
 
-
+void init_task_mypriority(struct task_struct *p)
+{
+	p->sched_class=&mypriority_sched_class;
+}
 void init_mypriority_rq (struct mypriority_rq *mypriority_rq)
 {
 	printk(KERN_INFO "***[MYPRIORITY] Mysched class is online \n");
@@ -46,6 +49,8 @@ static void update_curr_mypriority(struct rq *rq){
 	unsigned int *update_num = &mypriority_en->update_num;
 	struct task_struct *curr = NULL;
 
+
+
 	*update_num += 1;
 	curr = get_current();
 
@@ -55,7 +60,6 @@ static void update_curr_mypriority(struct rq *rq){
 		resched_curr(rq);
 	}
 	else printk("***[MYPRIORITY] update_curr_mypriority	pid=%d update_num=%d\n", curr->pid, *update_num);
-
 }
 
 static void enqueue_task_mypriority(struct rq *rq, struct task_struct *p, int flags) {
@@ -63,13 +67,34 @@ static void enqueue_task_mypriority(struct rq *rq, struct task_struct *p, int fl
 	struct mypriority_rq *mypriority_rq = &rq->mypriority;
 	struct list_head *queue = &mypriority_rq->queue;
 	struct sched_mypriority_entity *mypriority_en = &p->mypriority;
-	struct list_head *run_list = &mypriority_en->run_list;
+	struct list_head *run_list = &mypriority_en->run_list;	
 
-	list_add_tail(run_list, queue);
-	mypriority_rq->nr_running++;
+	struct sched_mypriority_entity *compare_mypriority_en;
+	unsigned int compare_priority, i;
+	struct list_head *compare_run_list;
 
-	printk("***[MYPRIORITY] enqueue: success cpu=%d, nr_running=%d, pid=%d\n", cpu_of(rq), mypriority_rq->nr_running, p->pid);
+	if(mypriority_rq->nr_running == 0){
+		list_add_tail(run_list, queue);
+		mypriority_rq->nr_running++;
+		mypriority_en->update_num = 0;
+	}
+	else{
+		compare_run_list = queue->next;
+		for(i = 0; i < mypriority_rq->nr_running; i++){
+			compare_mypriority_en = container_of(compare_run_list, struct sched_mypriority_entity, run_list);
+			compare_priority = compare_mypriority_en->priority;
+			if(compare_priority < mypriority_en->priority) break;
+			else compare_run_list = compare_run_list->next;
+		}
+		list_add_tail(run_list, compare_run_list);
+		mypriority_rq->nr_running++;
+		mypriority_en->update_num = 0;
+		if(i == 0){
+			resched_curr(rq);
+		}
+	}
 
+	printk("***[MYPRIORITY] enqueue: success cpu=%d, nr_running=%d, pid=%d, priority=%d\n", cpu_of(rq), mypriority_rq->nr_running, p->pid, mypriority_en->priority);
 }
 static void dequeue_task_mypriority(struct rq *rq, struct task_struct *p, int flags) 
 {	
