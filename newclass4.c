@@ -217,7 +217,36 @@ int main(int argc, char** argv)
 				perror("sched_setattr");
 				exit(1);
 			}
+			
+			CPU_ZERO(&mask);
+			CPU_SET(1, &mask);
+
+			if(sched_setaffinity(my_pid, sizeof(mask), &mask) )
+			{
+				fprintf(stderr, "cpuset failed\n");
+				exit(EXIT_FAILURE);
+			}else{
+				printf("cpuset at [1st] cpu in child process(pid=%d) is succeed\n", my_pid);
+			}
+			sleep(1);
+				
+			/* child process work */					
+			int j=0;
+			for(j=0; j<1; j++) {
+				
+				int i=0;
+				int result = 0;
+				for(i=0; i<200000000; i++)
+				{
+					result+=1;
+				}
+				printf("pid=%d:\tresult=%d\n", my_pid, result);
+				sleep(1);
+			}
+			exit(1);
 		}
+		printf("Child's PID = %d\n", pids);
+		//usleep(100000);
 		printf("forking GGOBSSARI tasks is completed\n");
 	}
 	else printf("forking %d tasks is completed\n", nr_proc);
