@@ -49,13 +49,27 @@ static void update_curr_mypriority(struct rq *rq){
 	unsigned int *update_num = &mypriority_en->update_num;
 	struct task_struct *curr = NULL;
 
-
+	struct sched_mypriority_entity *compare_mypriority_en;
+	unsigned int compare_priority, i;
+	struct list_head *compare_run_list;
+	struct list_head *run_list = queue->next;
 
 	*update_num += 1;
 	curr = get_current();
 
 	if(*update_num > MYPRIORITY_TIME_SLICE){
- 		list_move_tail(queue->next, queue);
+ 		compare_run_list = run_list->next;
+		for(i = 1; i < mypriority_rq->nr_running; i++){
+			compare_mypriority_en = container_of(compare_run_list, struct sched_mypriority_entity, run_list);
+			compare_mypriority_en->priority++;
+		}
+		for(i = 1; i < mypriority_rq->nr_running; i++){
+			compare_mypriority_en = container_of(compare_run_list, struct sched_mypriority_entity, run_list);
+			compare_priority = compare_mypriority_en->priority;
+			if(compare_priority < mypriority_en->priority) break;
+			else compare_run_list = compare_run_list->next;
+		}
+		list_move_tail(run_list, compare_run_list);
 		*update_num = 0;
 		resched_curr(rq);
 	}
