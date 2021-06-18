@@ -152,6 +152,7 @@ int main(int argc, char** argv)
 					perror("sched_setattr");
 					exit(1);
 				}
+
 			}
 			else if (c == 'f')
 				printf("***[NEWCLASS] Select CFS class \n");
@@ -190,65 +191,7 @@ int main(int argc, char** argv)
 		//usleep(100000);
 	}
 	
-	if(c == 't')
-	{
-		if ((pids = fork()) < 0) {
-			perror("fork error");
-			return -1;
-		} else if (pids == 0) {
-			my_pid = getpid();
-			my_id = i;
-			
-			printf("***[NEWCLASS] Select mypriority scheduling class \n");
-			attr.size = sizeof(attr);
-			attr.sched_policy = SCHED_MYPRIORITY;
-			attr.sched_flags = 0;
+	printf("forking %d tasks is completed\n", nr_proc);
 
-			attr.sched_period = 0;
-			attr.sched_runtime = 0;
-			attr.sched_deadline = 0;
-
-			attr.sched_nice = 0;
-			attr.sched_priority = 0;
-			attr.sched_mypriority = 100;
-
-			ret = sched_setattr(my_pid, &attr, flags);
-			if (ret != 0) {
-				perror("sched_setattr");
-				exit(1);
-			}
-			
-			CPU_ZERO(&mask);
-			CPU_SET(1, &mask);
-
-			if(sched_setaffinity(my_pid, sizeof(mask), &mask) )
-			{
-				fprintf(stderr, "cpuset failed\n");
-				exit(EXIT_FAILURE);
-			}else{
-				printf("cpuset at [1st] cpu in child process(pid=%d) is succeed\n", my_pid);
-			}
-			sleep(1);
-				
-			/* child process work */					
-			int j=0;
-			for(j=0; j<1; j++) {
-				
-				int i=0;
-				int result = 0;
-				for(i=0; i<200000000; i++)
-				{
-					result+=1;
-				}
-				printf("pid=%d:\tresult=%d\n", my_pid, result);
-				sleep(1);
-			}
-			exit(1);
-		}
-		printf("Child's PID = %d\n", pids);
-		//usleep(100000);
-		printf("forking GGOBSSARI tasks is completed\n");
-	}
-	else printf("forking %d tasks is completed\n", nr_proc);
 	return 0;
 }
