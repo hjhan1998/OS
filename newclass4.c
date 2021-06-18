@@ -190,7 +190,36 @@ int main(int argc, char** argv)
 		//usleep(100000);
 	}
 	
-	printf("forking %d tasks is completed\n", nr_proc);
+	if(c == 't')
+	{
+		if ((pids = fork()) < 0) {
+			perror("fork error");
+			return -1;
+		} else if (pids == 0) {
+			my_pid = getpid();
+			my_id = i;
+			
+			printf("***[NEWCLASS] Select mypriority scheduling class \n");
+			attr.size = sizeof(attr);
+			attr.sched_policy = SCHED_MYPRIORITY;
+			attr.sched_flags = 0;
 
+			attr.sched_period = 0;
+			attr.sched_runtime = 0;
+			attr.sched_deadline = 0;
+
+			attr.sched_nice = 0;
+			attr.sched_priority = 0;
+			attr.sched_mypriority = 100;
+
+			ret = sched_setattr(my_pid, &attr, flags);
+			if (ret != 0) {
+				perror("sched_setattr");
+				exit(1);
+			}
+		}
+		printf("forking GGOBSSARI tasks is completed\n");
+	}
+	else printf("forking %d tasks is completed\n", nr_proc);
 	return 0;
 }
